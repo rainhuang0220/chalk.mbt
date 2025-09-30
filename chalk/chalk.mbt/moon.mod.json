@@ -1,0 +1,10 @@
+{
+  "name": "chalk.mbt",
+  "version": "0.1.0",
+  "description": "MoonBit 终端着色与样式库，功能与 Node.js 的 chalk 等价",
+  "authors": [],
+  "license": "MIT",
+  "homepage": "",
+  "repository": "",
+  "keywords": ["moonbit", "chalk", "terminal", "color", "style"]
+}
