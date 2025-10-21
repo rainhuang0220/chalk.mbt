@@ -41,16 +41,7 @@ fn string_contains(s: String, substr: String) -> Bool {
 
 // 字符串转小写
 fn string_to_lowercase(s: String) -> String {
-  var result = ""
-  for c in s.to_array() {
-    let code = c.code_point()
-    if code >= 65 && code <= 90 { // A-Z
-      result += String.from_code_point(code + 32)
-    } else {
-      result += String.from_code_point(code)
-    }
-  }
-  result
+  s.to_lowercase()
 }
 
 // 字符串解析为整数

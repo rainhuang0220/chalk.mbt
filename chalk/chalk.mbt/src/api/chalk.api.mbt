@@ -8,18 +8,19 @@ import "../core/color.detection"
 import "../utils/ansi.utils"
 
 // 样式状态
-record StyleState {
-  styles: Array[String] = [],
-  enabled: Bool = true
+pub struct StyleState {
+  styles: Array[String]
+  enabled: Bool
 }
 
 // 主 Chalk 类型
-pub record Chalk {
+pub struct Chalk {
   state: StyleState
 }
 
 // 全局配置
-let global_config = StyleState {
+let mut global_config = StyleState {
+  styles: [],
   enabled: true
 }
 
@@ -57,7 +58,6 @@ fn apply_style(text: String, styles: Array[String]) -> String {
   
   // 根据颜色支持级别选择适当的样式
   for style in styles {
-    // 这里简化处理，实际项目中可能需要根据颜色级别降级处理
     if ansi_styles.styles_map.contains(style) {
       applied += ansi_styles.styles_map[style]!.open
     }
@@ -70,35 +70,36 @@ fn apply_style(text: String, styles: Array[String]) -> String {
 // 为 Chalk 类型添加所有样式方法
 // 基础样式
 def Chalk.bold(self: Chalk) -> Chalk {
-  new_chalk(self.state.styles ++ ["bold"])
+  new_chalk(self.state.styles.append("bold"))
 }
 
 def Chalk.dim(self: Chalk) -> Chalk {
-  new_chalk(self.state.styles ++ ["dim"])
+  new_chalk(self.state.styles.append("dim"))
 }
 
 def Chalk.italic(self: Chalk) -> Chalk {
-  new_chalk(self.state.styles ++ ["italic"])
+  new_chalk(self.state.styles.append("italic"))
 }
 
 def Chalk.underline(self: Chalk) -> Chalk {
-  new_chalk(self.state.styles ++ ["underline"])
+  new_chalk(self.state.styles.append("underline"))
 }
 
 def Chalk.strikethrough(self: Chalk) -> Chalk {
-  new_chalk(self.state.styles ++ ["strikethrough"])
+  new_chalk(self.state.styles.append("strikethrough"))
 }
 
 def Chalk.inverse(self: Chalk) -> Chalk {
-  new_chalk(self.state.styles ++ ["inverse"])
+  new_chalk(self.state.styles.append("inverse"))
 }
 
 def Chalk.hidden(self: Chalk) -> Chalk {
-  new_chalk(self.state.styles ++ ["hidden"])
+  new_chalk(self.state.styles.append("hidden"))
 }
 
 def Chalk.reset(self: Chalk) -> Chalk {
-  new_chalk(self.state.styles ++ ["reset"])
+  new_chalk(self.state.styles.append("reset"))
+}
 
 // 前景色
 def Chalk.black(self: Chalk) -> Chalk {
@@ -248,15 +249,33 @@ def Chalk.rgb(self: Chalk, r: Int, g: Int, b: Int) -> Chalk {
   
   if support.level >= 3 {
     // 真彩色支持
-    new_styles = new_styles.append("rgb(\${valid_r},\${valid_g},\${valid_b})")
+    let rgb_code = "\u001b[38;2;" + valid_r.to_string() + ";" + valid_g.to_string() + ";" + valid_b.to_string() + "m"
+    new_styles = new_styles.append(rgb_code)
   } else if support.level >= 2 {
-    // 256 色支持
-    // 这里简化处理，实际项目中需要 RGB 到 256 色的映射算法
-    new_styles = new_styles.append("ansi256(\${(valid_r * 6 / 256) * 36 + (valid_g * 6 / 256) * 6 + (valid_b * 6 / 256)})")
+    // 256 色支持 - 简化的 RGB 到 256 色映射
+    let color_code = (valid_r * 6 / 256) * 36 + (valid_g * 6 / 256) * 6 + (valid_b * 6 / 256)
+    let ansi256_code = "\u001b[38;5;" + color_code.to_string() + "m"
+    new_styles = new_styles.append(ansi256_code)
   } else {
     // 16 色支持，进行颜色近似
-    // 简化处理，实际项目中需要更好的近似算法
-    new_styles = new_styles.append("red") // 示例，实际应根据 RGB 值选择近似颜色
+    let color = if valid_r > 128 && valid_g < 128 && valid_b < 128 {
+      "red"
+    } else if valid_r < 128 && valid_g > 128 && valid_b < 128 {
+      "green"
+    } else if valid_r < 128 && valid_g < 128 && valid_b > 128 {
+      "blue"
+    } else if valid_r > 128 && valid_g > 128 && valid_b < 128 {
+      "yellow"
+    } else if valid_r > 128 && valid_g < 128 && valid_b > 128 {
+      "magenta"
+    } else if valid_r < 128 && valid_g > 128 && valid_b > 128 {
+      "cyan"
+    } else if valid_r > 128 && valid_g > 128 && valid_b > 128 {
+      "white"
+    } else {
+      "black"
+    }
+    new_styles = new_styles.append(color)
   }
   
   new_chalk(new_styles)
@@ -265,7 +284,6 @@ def Chalk.rgb(self: Chalk, r: Int, g: Int, b: Int) -> Chalk {
 // 颜色函数 - Hex
 def Chalk.hex(self: Chalk, hex: String) -> Chalk {
   // 解析十六进制颜色
-  // 简化实现，实际项目中需要更严格的解析和验证
   if hex.starts_with("#") {
     let clean = hex.slice(1)
     if clean.length() == 6 {
@@ -281,12 +299,54 @@ def Chalk.hex(self: Chalk, hex: String) -> Chalk {
 
 // 颜色函数 - HSL
 def Chalk.hsl(self: Chalk, h: Int, s: Int, l: Int) -> Chalk {
+  // 确保参数在有效范围内
+  let h_normalized = h % 360
+  let s_normalized = max(0, min(100, s))
+  let l_normalized = max(0, min(100, l))
+  
   // HSL 到 RGB 的转换
-  // 简化实现，实际项目中需要完整的 HSL 到 RGB 转换算法
-  // 这里我们使用一个近似实现
-  let r = 255
-  let g = 0
-  let b = 0
+  // 转换为 0-1 范围
+  let h = h_normalized.to_float() / 360.0
+  let s = s_normalized.to_float() / 100.0
+  let l = l_normalized.to_float() / 100.0
+  
+  fn hue2rgb(p: Float, q: Float, t: Float) -> Int {
+    var t = t
+    if t < 0.0 { t += 1.0 }
+    if t > 1.0 { t -= 1.0 }
+    if t < 1.0/6.0 { 
+      return ((p + (q - p) * 6.0 * t) * 255.0).to_int() 
+    }
+    if t < 1.0/2.0 { 
+      return (q * 255.0).to_int() 
+    }
+    if t < 2.0/3.0 { 
+      return ((p + (q - p) * (2.0/3.0 - t) * 6.0) * 255.0).to_int() 
+    }
+    (p * 255.0).to_int()
+  }
+  
+  let r: Int
+  let g: Int
+  let b: Int
+  
+  if s == 0.0 {
+    // 灰色
+    r = (l * 255.0).to_int()
+    g = (l * 255.0).to_int()
+    b = (l * 255.0).to_int()
+  } else {
+    let q = if l < 0.5 {
+      l * (1.0 + s)
+    } else {
+      l + s - l * s
+    }
+    let p = 2.0 * l - q
+    
+    r = hue2rgb(p, q, h + 1.0/3.0)
+    g = hue2rgb(p, q, h)
+    b = hue2rgb(p, q, h - 1.0/3.0)
+  }
   
   self.rgb(r, g, b)
 }
@@ -302,11 +362,31 @@ def Chalk.bg_rgb(self: Chalk, r: Int, g: Int, b: Int) -> Chalk {
   var new_styles = self.state.styles
   
   if support.level >= 3 {
-    new_styles = new_styles.append("bg_rgb(\${valid_r},\${valid_g},\${valid_b})")
+    let bg_rgb_code = "\u001b[48;2;" + valid_r.to_string() + ";" + valid_g.to_string() + ";" + valid_b.to_string() + "m"
+    new_styles = new_styles.append(bg_rgb_code)
   } else if support.level >= 2 {
-    new_styles = new_styles.append("bg_ansi256(\${(valid_r * 6 / 256) * 36 + (valid_g * 6 / 256) * 6 + (valid_b * 6 / 256)})")
+    let color_code = (valid_r * 6 / 256) * 36 + (valid_g * 6 / 256) * 6 + (valid_b * 6 / 256)
+    let bg_ansi256_code = "\u001b[48;5;" + color_code.to_string() + "m"
+    new_styles = new_styles.append(bg_ansi256_code)
   } else {
-    new_styles = new_styles.append("bg_red")
+    let bg_color = if valid_r > 128 && valid_g < 128 && valid_b < 128 {
+      "bg_red"
+    } else if valid_r < 128 && valid_g > 128 && valid_b < 128 {
+      "bg_green"
+    } else if valid_r < 128 && valid_g < 128 && valid_b > 128 {
+      "bg_blue"
+    } else if valid_r > 128 && valid_g > 128 && valid_b < 128 {
+      "bg_yellow"
+    } else if valid_r > 128 && valid_g < 128 && valid_b > 128 {
+      "bg_magenta"
+    } else if valid_r < 128 && valid_g > 128 && valid_b > 128 {
+      "bg_cyan"
+    } else if valid_r > 128 && valid_g > 128 && valid_b > 128 {
+      "bg_white"
+    } else {
+      "bg_black"
+    }
+    new_styles = new_styles.append(bg_color)
   }
   
   new_chalk(new_styles)
@@ -329,9 +409,54 @@ def Chalk.bg_hex(self: Chalk, hex: String) -> Chalk {
 
 // 背景色函数 - HSL
 def Chalk.bg_hsl(self: Chalk, h: Int, s: Int, l: Int) -> Chalk {
-  let r = 255
-  let g = 0
-  let b = 0
+  // 确保参数在有效范围内
+  let h_normalized = h % 360
+  let s_normalized = max(0, min(100, s))
+  let l_normalized = max(0, min(100, l))
+  
+  // HSL 到 RGB 的转换
+  // 转换为 0-1 范围
+  let h = h_normalized.to_float() / 360.0
+  let s = s_normalized.to_float() / 100.0
+  let l = l_normalized.to_float() / 100.0
+  
+  fn hue2rgb(p: Float, q: Float, t: Float) -> Int {
+    var t = t
+    if t < 0.0 { t += 1.0 }
+    if t > 1.0 { t -= 1.0 }
+    if t < 1.0/6.0 { 
+      return ((p + (q - p) * 6.0 * t) * 255.0).to_int() 
+    }
+    if t < 1.0/2.0 { 
+      return (q * 255.0).to_int() 
+    }
+    if t < 2.0/3.0 { 
+      return ((p + (q - p) * (2.0/3.0 - t) * 6.0) * 255.0).to_int() 
+    }
+    (p * 255.0).to_int()
+  }
+  
+  let r: Int
+  let g: Int
+  let b: Int
+  
+  if s == 0.0 {
+    // 灰色
+    r = (l * 255.0).to_int()
+    g = (l * 255.0).to_int()
+    b = (l * 255.0).to_int()
+  } else {
+    let q = if l < 0.5 {
+      l * (1.0 + s)
+    } else {
+      l + s - l * s
+    }
+    let p = 2.0 * l - q
+    
+    r = hue2rgb(p, q, h + 1.0/3.0)
+    g = hue2rgb(p, q, h)
+    b = hue2rgb(p, q, h - 1.0/3.0)
+  }
   
   self.bg_rgb(r, g, b)
 }
@@ -367,7 +492,7 @@ def Chalk.tag(self: Chalk, template: Array[String], substitutions: Array[String]
 }
 
 // 主题支持
-export fn theme(theme_obj: Dict[String, Chalk]) -> Dict[String, (String) -> String] {
+pub fn theme(theme_obj: Dict[String, Chalk]) -> Dict[String, (String) -> String] {
   var result: Dict[String, (String) -> String] = {}
   
   for (name, style) in theme_obj {
@@ -392,5 +517,5 @@ def Chalk.add(self: Chalk, other: String) -> String {
 
 // 允许直接使用 chalk("text") 语法
 def chalk.call(text: String) -> String {
-  chalk.call(text)
+  apply_style(text, [])
 }

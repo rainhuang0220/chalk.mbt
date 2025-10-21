@@ -58,19 +58,19 @@ pub let bg_bright_white = "\u001b[107m"
 
 // 256 色与 TrueColor 生成函数
 pub fn ansi256_fg(code: Int) -> String {
-  "\u001b[38;5;%{code}m"
+  "\u001b[38;5;" + code.to_string() + "m"
 }
 
 pub fn ansi256_bg(code: Int) -> String {
-  "\u001b[48;5;%{code}m"
+  "\u001b[48;5;" + code.to_string() + "m"
 }
 
 pub fn rgb_fg(r: Int, g: Int, b: Int) -> String {
-  "\u001b[38;2;%{r};%{g};%{b}m"
+  "\u001b[38;2;" + r.to_string() + ";" + g.to_string() + ";" + b.to_string() + "m"
 }
 
 pub fn rgb_bg(r: Int, g: Int, b: Int) -> String {
-  "\u001b[48;2;%{r};%{g};%{b}m"
+  "\u001b[48;2;" + r.to_string() + ";" + g.to_string() + ";" + b.to_string() + "m"
 }
 
 // 样式类型定义

@@ -4,7 +4,7 @@
 import "../src/main"
 
 // 主函数
-pub fn main() {
+fn main {
   // 显示终端颜色支持信息
   let support = chalk::supports_color()
   println("终端颜色支持信息:")
@@ -51,67 +51,67 @@ pub fn main() {
 
   // 背景色展示
   println("=== 背景色 ===")
-  println(chalk.bg_black.white("黑色背景白色文本"))
-  println(chalk.bg_red.white("红色背景白色文本"))
-  println(chalk.bg_green.black("绿色背景黑色文本"))
-  println(chalk.bg_yellow.black("黄色背景黑色文本"))
-  println(chalk.bg_blue.white("蓝色背景白色文本"))
+  println(chalk::chalk.bg_black.white("黑色背景白色文本"))
+  println(chalk::chalk.bg_red.white("红色背景白色文本"))
+  println(chalk::chalk.bg_green.black("绿色背景黑色文本"))
+  println(chalk::chalk.bg_yellow.black("黄色背景黑色文本"))
+  println(chalk::chalk.bg_blue.white("蓝色背景白色文本"))
   println("")
 
   // 链式样式展示
   println("=== 链式样式 ===")
-  println(chalk.red.bold.underline("红色粗体下划线文本"))
-  println(chalk.bg_blue.white.bold("蓝色背景白色粗体文本"))
+  println(chalk::chalk.red.bold.underline("红色粗体下划线文本"))
+  println(chalk::chalk.bg_blue.white.bold("蓝色背景白色粗体文本"))
   println("")
 
   // RGB 颜色展示
   println("=== RGB 颜色 ===")
-  println(chalk.rgb(255, 165, 0)("橙色文本 (RGB: 255,165,0)"))
-  println(chalk.bg_rgb(128, 0, 128).white("紫色背景白色文本 (RGB: 128,0,128)"))
+  println(chalk::chalk.rgb(255, 165, 0)("橙色文本 (RGB: 255,165,0)"))
+  println(chalk::chalk.bg_rgb(128, 0, 128).white("紫色背景白色文本 (RGB: 128,0,128)"))
   println("")
 
   // HEX 颜色展示
   println("=== HEX 颜色 ===")
-  println(chalk.hex("#ff6b6b")("粉红色文本 (HEX: #ff6b6b)"))
-  println(chalk.bg_hex("#4ecdc4").black("青绿色背景黑色文本 (HEX: #4ecdc4)"))
+  println(chalk::chalk.hex("#ff6b6b")("粉红色文本 (HEX: #ff6b6b)"))
+  println(chalk::chalk.bg_hex("#4ecdc4").black("青绿色背景黑色文本 (HEX: #4ecdc4)"))
   println("")
 
   // 工具函数演示
   println("=== 工具函数 ===")
-  let colored_text = chalk.red.bold("红色粗体文本")
-  println("原始文本: \${colored_text}")
-  println("移除ANSI: \${chalk::stripAnsi(colored_text)}")
-  println("可见宽度: \${chalk::visibleWidth(colored_text)}")
+  let colored_text = chalk::chalk.red.bold("红色粗体文本")
+  println("原始文本: %{colored_text}")
+  println("移除ANSI: %{chalk::strip_ansi(colored_text)}")
+  println("可见宽度: %{chalk::visible_width(colored_text)}")
   println("")
 
   // 主题演示
   println("=== 主题 ===")
   let themes = chalk::theme({
-    "error": chalk.red.bold,
-    "success": chalk.green.bold,
-    "info": chalk.blue.italic,
-    "warning": chalk.yellow.bold
+    "error": chalk::chalk.red.bold,
+    "success": chalk::chalk.green.bold,
+    "info": chalk::chalk.blue.italic,
+    "warning": chalk::chalk.yellow.bold
   })
   
   if themes.contains("error") {
-    println(themes["error"]!("这是一个错误消息"))
+    println(themes["error"]("这是一个错误消息"))
   }
   if themes.contains("success") {
-    println(themes["success"]!("操作成功完成"))
+    println(themes["success"]("操作成功完成"))
   }
   if themes.contains("info") {
-    println(themes["info"]!("这是一条信息"))
+    println(themes["info"]("这是一条信息"))
   }
   if themes.contains("warning") {
-    println(themes["warning"]!("警告：请谨慎操作"))
+    println(themes["warning"]("警告：请谨慎操作"))
   }
   println("")
 
   // 启用/禁用颜色演示
   println("=== 启用/禁用颜色 ===")
-  println("启用颜色: " + chalk.red("这是红色文本"))
+  println("启用颜色: " + chalk::chalk.red("这是红色文本"))
   chalk::disable()
-  println("禁用颜色: " + chalk.red("这是应该没有颜色的文本"))
+  println("禁用颜色: " + chalk::chalk.red("这是应该没有颜色的文本"))
   chalk::enable()
-  println("重新启用颜色: " + chalk.red("这是红色文本"))
+  println("重新启用颜色: " + chalk::chalk.red("这是红色文本"))
 }
