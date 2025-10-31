@@ -1,0 +1,1 @@
+{"$message_type":"diagnostic","level":"warning","loc":{"path":"C:\\Users\\RainHuang\\Desktop\\moon\\chalk.mbt\\chalk\\chalk.mbt\\src\\utils\\ansi.utils.mbt","start":{"line":16,"col":17},"end":{"line":16,"col":18}},"message":"Warning: Unused variable 's'","error_code":2}

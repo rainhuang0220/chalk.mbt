@@ -1,4 +1,4 @@
-// 终端颜色支持检测
+// 终端颜色支持检测 - 完整实现
 // 负责检测终端是否支持颜色、支持的颜色级别
 // 遵循 NO_COLOR、FORCE_COLOR、TERM、COLORTERM 等环境变量
 
@@ -21,19 +21,6 @@ let default_support: ColorSupport = {
   has16m: false
 }
 
-// 检查是否有 NO_COLOR 环境变量
-// 如有，应完全禁用颜色
-let has_no_color = sys.getenv("NO_COLOR") !== null
-
-// 获取 FORCE_COLOR 环境变量的值
-let force_color = sys.getenv("FORCE_COLOR")
-
-// 获取 TERM 环境变量
-let term = sys.getenv("TERM")
-
-// 获取 COLORTERM 环境变量
-let colorterm = sys.getenv("COLORTERM")
-
 // 检查字符串是否包含子串
 fn string_contains(s: String, substr: String) -> Bool {
   s.find(substr) !== null
@@ -53,10 +40,10 @@ fn string_parse_int(s: String) -> Option[Int] {
 }
 
 // 检查是否是 TTY
-// 在 MoonBit 中，我们需要实现一个简单的检测方法
-let is_tty = {
+pub fn is_tty() -> Bool {
   // 这里是一个简化的实现
   // 实际项目中可能需要更复杂的检测逻辑
+  let term = sys.getenv("TERM")
   match sys.os() {
     "windows" => true,  // Windows 环境默认认为是 TTY
     _ => term !== null && !string_contains(term, "dumb")  // 非 dumb 终端通常是 TTY
@@ -65,8 +52,14 @@ let is_tty = {
 
 // 检测颜色支持级别
 pub fn supports_color() -> ColorSupport {
+  // 检测环境变量
+  let no_color = sys.getenv("NO_COLOR") !== null
+  let force_color = sys.getenv("FORCE_COLOR")
+  let term = sys.getenv("TERM")
+  let colorterm = sys.getenv("COLORTERM")
+  
   // 如果设置了 NO_COLOR，完全禁用颜色
-  if has_no_color {
+  if no_color {
     return default_support
   }
 
@@ -74,7 +67,10 @@ pub fn supports_color() -> ColorSupport {
   if force_color !== null {
     let level = match string_parse_int(force_color) {
       Some(x) => x,
-      None => 0
+      None => {
+        // 空字符串值的 FORCE_COLOR 意味着启用基本颜色
+        force_color == "" ? 1 : 0
+      }
     }
     return {
       level: max(0, min(3, level)),
@@ -84,38 +80,69 @@ pub fn supports_color() -> ColorSupport {
   }
 
   // 如果不是 TTY，默认不使用颜色
-  if !is_tty {
+  if !is_tty() {
     return default_support
   }
 
+  // 检测终端类型
+  let is_256color = term !== null && {
+    let t = term.to_lowercase()
+    string_contains(t, "256color") || 
+    string_contains(t, "xterm") ||
+    string_contains(t, "rxvt") ||
+    string_contains(t, "screen")
+  }
+
+  let is_truecolor = {
+    let has_truecolor = colorterm !== null && {
+      let ct = colorterm.to_lowercase()
+      string_contains(ct, "truecolor") || string_contains(ct, "24bit")
+    }
+    let term_has_truecolor = term !== null && {
+      let t = term.to_lowercase()
+      string_contains(t, "truecolor") || string_contains(t, "24bit")
+    }
+    has_truecolor || term_has_truecolor
+  }
+
+  // 检测常见终端
+  let is_known_terminal = term !== null && {
+    let t = term.to_lowercase()
+    string_contains(t, "ansi") ||
+    string_contains(t, "color") ||
+    string_contains(t, "cygwin") ||
+    string_contains(t, "linux") ||
+    string_contains(t, "mintty") ||
+    string_contains(t, "putty") ||
+    string_contains(t, "vte")
+  }
+
   // 基于 COLORTERM 检测真彩色支持
-  if colorterm !== null {
-    let ct = string_to_lowercase(colorterm)
-    if ct == "truecolor" || ct == "24bit" {
-      return {
-        level: 3,
-        has256: true,
-        has16m: true
-      }
+  if is_truecolor {
+    return {
+      level: 3,
+      has256: true,
+      has16m: true
     }
   }
 
   // 基于 TERM 环境变量检测颜色支持
-  if term !== null {
-    let t = term.to_lowercase()
-    if t.contains("256color") || t.contains("xterm-256color") {
-      return {
-        level: 2,
-        has256: true,
-        has16m: false
-      }
+  if is_256color {
+    return {
+      level: 2,
+      has256: true,
+      has16m: false
     }
-    if t.contains("color") || t == "xterm" || t == "screen" || t == "vt100" {
-      return {
-        level: 1,
-        has256: false,
-        has16m: false
-      }
+  }
+
+  if is_known_terminal || (term !== null && {
+    let t = term.to_lowercase()
+    string_contains(t, "color") || t == "xterm" || t == "screen" || t == "vt100"
+  }) {
+    return {
+      level: 1,
+      has256: false,
+      has16m: false
     }
   }
 
@@ -148,6 +175,11 @@ pub fn supports_color() -> ColorSupport {
     },
     _ => default_support
   }
+}
+
+// 获取实际的颜色支持级别（考虑TTY）
+pub fn get_color_level() -> ColorSupport {
+  supports_color()
 }
 
 // 检查是否支持特定颜色级别

@@ -1,4 +1,4 @@
-// ANSI 转义码定义
+// ANSI 转义码定义 - 完整实现
 // 包含所有支持的文本样式、前景色和背景色的 ANSI 代码
 
 module ansi_styles
@@ -25,6 +25,9 @@ pub let magenta = "\u001b[35m"
 pub let cyan = "\u001b[36m"
 pub let white = "\u001b[37m"
 pub let gray = "\u001b[90m"
+
+// 灰色别名
+pub let grey = gray
 
 // 亮色调前景色
 pub let bright_black = "\u001b[90m"
@@ -56,21 +59,74 @@ pub let bg_bright_magenta = "\u001b[105m"
 pub let bg_bright_cyan = "\u001b[106m"
 pub let bg_bright_white = "\u001b[107m"
 
+// 辅助函数：将值限制在指定范围内
+fn clamp(x: Int, min: Int, max: Int) -> Int {
+  if x < min {
+    min
+  } else if x > max {
+    max
+  } else {
+    x
+  }
+}
+
 // 256 色与 TrueColor 生成函数
 pub fn ansi256_fg(code: Int) -> String {
-  "\u001b[38;5;" + code.to_string() + "m"
+  let valid_code = clamp(code, 0, 255)
+  "\u001b[38;5;" + valid_code.to_string() + "m"
 }
 
 pub fn ansi256_bg(code: Int) -> String {
-  "\u001b[48;5;" + code.to_string() + "m"
+  let valid_code = clamp(code, 0, 255)
+  "\u001b[48;5;" + valid_code.to_string() + "m"
 }
 
 pub fn rgb_fg(r: Int, g: Int, b: Int) -> String {
-  "\u001b[38;2;" + r.to_string() + ";" + g.to_string() + ";" + b.to_string() + "m"
+  let r_clamped = clamp(r, 0, 255)
+  let g_clamped = clamp(g, 0, 255)
+  let b_clamped = clamp(b, 0, 255)
+  "\u001b[38;2;" + r_clamped.to_string() + ";" + g_clamped.to_string() + ";" + b_clamped.to_string() + "m"
 }
 
 pub fn rgb_bg(r: Int, g: Int, b: Int) -> String {
-  "\u001b[48;2;" + r.to_string() + ";" + g.to_string() + ";" + b.to_string() + "m"
+  let r_clamped = clamp(r, 0, 255)
+  let g_clamped = clamp(g, 0, 255)
+  let b_clamped = clamp(b, 0, 255)
+  "\u001b[48;2;" + r_clamped.to_string() + ";" + g_clamped.to_string() + ";" + b_clamped.to_string() + "m"
+}
+
+// 从十六进制颜色代码解析 RGB
+pub fn hex_to_rgb(hex: String) -> Option[(Int, Int, Int)] {
+  // 移除 # 前缀（如果有）
+  let clean_hex = if hex.has_prefix("#") {
+    hex.substring(1)
+  } else {
+    hex
+  }
+  
+  // 验证十六进制字符串
+  if clean_hex.length() != 3 && clean_hex.length() != 6 {
+    return None
+  }
+  
+  // 将短格式转换为长格式
+  let long_hex = if clean_hex.length() == 3 {
+    clean_hex[0] + clean_hex[0] + clean_hex[1] + clean_hex[1] + clean_hex[2] + clean_hex[2]
+  } else {
+    clean_hex
+  }
+  
+  // 解析 RGB 值
+  let r = long_hex.substring(0, 2).parse_int(16).get_or_else(-1)
+  let g = long_hex.substring(2, 4).parse_int(16).get_or_else(-1)
+  let b = long_hex.substring(4, 6).parse_int(16).get_or_else(-1)
+  
+  if r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
+    Some((r, g, b))
+  } else {
+    None
+  }
+}
 }
 
 // 样式类型定义

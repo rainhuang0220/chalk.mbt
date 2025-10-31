@@ -1,11 +1,11 @@
 {
-  "source_dir": "C:\\Users\\RainHuang\\Desktop\\moon\\chalk\\chalk.mbt",
+  "source_dir": "C:\\Users\\RainHuang\\Desktop\\moon\\chalk.mbt\\chalk\\chalk.mbt",
   "name": "chalk.mbt",
   "packages": [
     {
       "is-main": false,
       "is-third-party": false,
-      "root-path": "C:\\Users\\RainHuang\\Desktop\\moon\\chalk\\chalk.mbt",
+      "root-path": "C:\\Users\\RainHuang\\Desktop\\moon\\chalk.mbt\\chalk\\chalk.mbt",
       "root": "chalk.mbt",
       "rel": "",
       "files": {},
@@ -15,7 +15,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "C:\\Users\\RainHuang\\Desktop\\moon\\chalk\\chalk.mbt\\target\\wasm-gc\\release\\check\\chalk.mi"
+      "artifact": "C:\\Users\\RainHuang\\Desktop\\moon\\chalk.mbt\\chalk\\chalk.mbt\\target\\wasm-gc\\release\\check\\chalk.mi"
     }
   ],
   "deps": [],
